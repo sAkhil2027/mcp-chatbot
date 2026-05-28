@@ -1,4 +1,5 @@
 🚀 LangGraph MCP Chatbot using Streamlit + OpenRouter + SQLite
+
 An advanced AI chatbot system built using LangGraph, LangChain, Streamlit, and OpenRouter LLMs with persistent memory, multi-thread conversations, tool calling, and real-time streaming responses.
 This project demonstrates how to build a production-style conversational AI system with:
 Stateful AI workflows
@@ -10,13 +11,16 @@ Async architecture
 LangGraph conditional workflows
 
 📌 Features
+
 ✅ Persistent Multi-Thread Conversations
+
 Create unlimited chat sessions
 Restore previous conversations
 Continue chats even after restarting the app
 SQLite-based checkpoint persistence
 
 ✅ LangGraph AI Workflow
+
 Built using LangGraph state machines with:
 Chat Node
 Tool Node
