@@ -528,7 +528,6 @@ This project is highly relevant for:
 ##Akhil Vikram Singh
 
 AI/ML Engineer focused on:
-
 * Generative AI
 * LangGraph Agents
 * RAG Systems
