@@ -91,11 +91,13 @@ def get_stock_price(symbol: str) -> dict:
     TSLA
     """
 
-    url = (
-        "https://www.alphavantage.co/query?"
-        f"function=GLOBAL_QUOTE&symbol={symbol}"
-        "&apikey=C9PE94QUEW9VWGFM"
-    )
+API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+
+   url = (
+    "https://www.alphavantage.co/query?"
+    f"function=GLOBAL_QUOTE&symbol={symbol}"
+    f"&apikey={API_KEY}"
+   )
 
     response = requests.get(url)
 
