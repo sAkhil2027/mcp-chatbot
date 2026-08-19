@@ -1,541 +1,138 @@
-# 🚀 LangGraph MCP Chatbot using Streamlit + OpenRouter + SQLite
+# 🚀 LangGraph MCP Chatbot with Production Guardrails
 
-An advanced AI chatbot system built using **LangGraph**, **LangChain**, **Streamlit**, and **OpenRouter LLMs** with persistent memory, multi-thread conversations, tool calling, and real-time streaming responses.
+An advanced AI chatbot system built using **LangGraph**, **LangChain**, **Streamlit**, and **OpenRouter LLMs** featuring persistent SQLite memory, multi-thread conversations, tool orchestration, context sanitization, and production-grade security guardrails.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" />
   <img src="https://img.shields.io/badge/LangGraph-Agentic_Workflows-black?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Streamlit-Frontend-red?style=for-the-badge&logo=streamlit" />
   <img src="https://img.shields.io/badge/OpenRouter-LLM_API-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Guardrails-Active-success?style=for-the-badge" />
 </p>
 
 ---
 
-# 📌 Features
+## 📌 Features
 
-## ✅ Persistent Multi-Thread Conversations
+### ✅ Production-Grade Security Guardrails
+* **Prompt Input Guardrail**: Intercepts prompt injection attacks, SQL commands (`DROP TABLE`), script injections, and system overrides *before* reaching the LLM API.
+* **Tool Parameter Guardrail**: Middleware (`tool_guardrail_node`) that inspects tool arguments for malicious patterns prior to execution.
+* **Pydantic Schema Validation**: Enforces strict argument validation (e.g., stock symbols must strictly match `^[A-Z]{1,5}$`).
+* **Tool Loop Protection**: Caps tool execution turns to a maximum threshold (`MAX_TOOL_CALLS_PER_TURN = 3`) to prevent infinite recursion loops.
 
-* Create unlimited chat sessions
-* Restore previous conversations
-* Continue chats after restarting the application
-* SQLite-based persistent memory
+### ✅ Persistent Multi-Thread Conversations
+* Unlimited conversation threads saved in SQLite (`chatbot.db`).
+* Context memory sanitization (`sanitize_messages`) to prevent history blowups and state pollution.
+* Restore previous conversations after application restart.
 
----
+### ✅ LangGraph Agentic Workflow
+* ReAct-style state loop (`START -> chat_node -> tools_condition -> (tools -> chat_node | END)`).
+* Autonomous tool routing and tool selection.
+* System security policy enforcement (`SYSTEM_SECURITY_PROMPT`).
 
-## ✅ LangGraph AI Workflow
-
-Built using LangGraph state machines with:
-
-* Chat Node
-* Tool Node
-* Conditional Routing
-* Stateful Execution
-
----
-
-## ✅ Real-Time Streaming Responses
-
-* Token-by-token streaming
-* ChatGPT-like interaction experience
-* Smooth user experience using Streamlit
+### ✅ Real-Time Streaming & Tools
+* Token-by-token streaming UI powered by Streamlit.
+* Integrated tools: DuckDuckGo Web Search & AlphaVantage Stock Price API.
 
 ---
 
-## ✅ Intelligent Tool Calling
-
-Integrated tools include:
-
-* 🌐 DuckDuckGo Web Search
-
-The AI automatically decides when tools are required.
-
----
-
-## ✅ Async Architecture
-
-Custom background async event loop implementation for:
-
-* Non-blocking execution
-* Streaming support
-* Async database operations
-* Scalable chatbot execution
-
----
-
-## ✅ MCP Style Backend Architecture
-
-Clean separation between:
-
-* Frontend UI
-* Backend graph execution
-* State management
-* Tool orchestration
-
----
-
-# 🏗️ System Architecture
+## 🏗️ System Architecture
 
 ```text
-                ┌─────────────────────┐
-                │    Streamlit UI     │
-                └──────────┬──────────┘
+               ┌───────────────────────┐
+               │     Streamlit UI      │
+               └───────────┬───────────┘
                            │
                            ▼
-                ┌─────────────────────┐
-                │ LangGraph Workflow  │
-                └──────────┬──────────┘
-                           │
-          ┌────────────────┴────────────────┐
-          ▼                                 ▼
- ┌─────────────────────┐        ┌─────────────────────┐
- │     Chat Node       │        │     Tool Node       │
- └─────────────────────┘        └─────────────────────┘
-          │                                 │
-          ▼                                 ▼
- ┌─────────────────────┐        ┌─────────────────────┐
- │  OpenRouter LLM     │        │ Search + Stock Tool │
- │   GPT-4o-mini       │        └─────────────────────┘
- └─────────────────────┘
+               ┌───────────────────────┐
+               │       chat_node       │ ──► [Prompt Input Guardrail]
+               └───────────┬───────────┘
                            │
                            ▼
-                ┌─────────────────────┐
-                │ SQLite Checkpointer │
-                └─────────────────────┘
+               ┌───────────────────────┐
+               │    tools_condition    │
+               └───────────┬───────────┘
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │  tool_guardrail_node  │ ──► [Argument & Loop Guardrail]
+               └───────────┬───────────┘
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │   OpenRouter / Tools  │
+               └───────────┬───────────┘
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │  SQLite Checkpointer  │
+               └───────────┬───────────┘
 ```
 
 ---
 
-# ⚙️ Tech Stack
-
-| Layer           | Technology   |
-| --------------- | ------------ |
-| Frontend        | Streamlit    |
-| Workflow Engine | LangGraph    |
-| LLM Framework   | LangChain    |
-| LLM Provider    | OpenRouter   |
-| Model           | GPT-4o-mini  |
-| Database        | SQLite       |
-| Async DB        | aiosqlite    |
-| Search Tool     | DuckDuckGo   |
-| API Tool        | AlphaVantage |
-| Language        | Python       |
-
----
-
-# 📂 Project Structure
+## 📂 Project Structure
 
 ```bash
-project/
+mcp-chatbot/
 │
-├── langgraph_mcp_backend.py
-├── streamlit_mcp_frontend.py
-├── requirements.txt
-├── dockerfile
-├── dockignore
-├── chatbot.db-shm
-├── chatbot.db-wal
-├── .gitignore
-└── test.py
+├── langgraph_mcp_backend.py    # LangGraph workflow, tools & guardrails middleware
+├── streamlit_mcp_frontend.py   # Streamlit multi-thread streaming frontend
+├── verify_guardrails.py        # Automated guardrail verification script
+├── requirements.txt            # Project dependencies (UTF-8)
+├── .env.example                # API key template
+├── dockerfile                  # Docker container configuration
+├── dockignore                  # Docker ignore configuration
+├── .gitignore                  # Git ignore policy
+├── README.md                   # Project documentation
+└── test.py                     # Basic graph invocation test
 ```
 
 ---
 
-# 🔥 How It Works
+## 🚀 Quick Setup & Execution
 
-## Step 1 — User Sends Message
-
-The user enters a message through the Streamlit chat interface.
-
----
-
-## Step 2 — Message Sent to LangGraph
-
-The frontend streams the message into the LangGraph workflow.
-
-```python
-chatbot.astream(
-    {"messages": [HumanMessage(content=user_input)]},
-    config=CONFIG,
-    stream_mode="messages",
-)
-```
-
----
-
-## Step 3 — Chat Node Executes
-
-The chatbot sends conversation history to the LLM.
-
-```python
-response = await llm_with_tools.ainvoke(messages)
-```
-
----
-
-## Step 4 — Conditional Tool Execution
-
-LangGraph checks whether tools are needed.
-
-If required:
-
-* Execution routes to ToolNode
-* Tool executes
-* Result returns back to chatbot
-
----
-
-## Step 5 — Real-Time Streaming
-
-Assistant responses are streamed token-by-token to Streamlit.
-
----
-
-## Step 6 — Persistent Memory Storage
-
-All conversation states are stored using SQLite checkpointers.
-
-```python
-AsyncSqliteSaver(conn)
-```
-
----
-
-# 🧠 LangGraph Workflow
-
-```text
-START
-   │
-   ▼
-chat_node
-   │
-   ├── Tool Needed? ──► ToolNode
-   │                        │
-   │                        ▼
-   └────────────────── chat_node
-```
-
-The graph dynamically decides:
-
-* Direct AI response
-* Or tool execution
-
----
-
-# ⚡ Backend Overview (`langgraph_mcp_backend.py`)
-
-## ✅ Environment Variables
-
-```python
-load_dotenv()
-```
-
-Loads API keys securely from `.env`.
-
----
-
-## ✅ Background Async Event Loop
-
-Since Streamlit is synchronous by default, a dedicated async loop is created.
-
-```python
-_ASYNC_LOOP = asyncio.new_event_loop()
-```
-
-This enables:
-
-* Async LangGraph execution
-* Non-blocking streaming
-* Async DB checkpointing
-
----
-
-## ✅ LLM Configuration
-
-```python
-llm = ChatOpenAI(
-    model="openai/gpt-4o-mini",
-)
-```
-
-Uses:
-
-* OpenRouter API
-* GPT-4o-mini model
-
----
-
-## ✅ Tool Integration
-
-### 🌐 DuckDuckGo Search
-
-```python
-DuckDuckGoSearchRun()
-```
-
-Enables live internet searching.
-
----
-
-### 📈 Stock Price Tool
-
-```python
-@tool
-def get_stock_price(symbol: str)
-```
-
-Fetches live stock data using AlphaVantage API.
-
-Example:
-
-```text
-AAPL
-TSLA
-MSFT
-```
-
----
-
-## ✅ State Management
-
-```python
-class ChatState(TypedDict)
-```
-
-Stores:
-
-* Conversation messages
-* State history
-
----
-
-## ✅ SQLite Checkpointer
-
-```python
-AsyncSqliteSaver(conn)
-```
-
-Provides:
-
-* Persistent memory
-* Thread restoration
-* Conversation continuity
-
----
-
-# 🎨 Frontend Overview (`streamlit_mcp_frontend.py`)
-
-## ✅ Session State Management
-
-Maintains:
-
-* Thread IDs
-* Message history
-* Conversation switching
-
----
-
-## ✅ Multi-Conversation Sidebar
-
-Users can:
-
-* Create new chats
-* Switch between old chats
-* Continue previous sessions
-
----
-
-## ✅ Streaming UI
-
-```python
-st.write_stream(ai_only_stream())
-```
-
-Streams assistant output in real-time.
-
----
-
-## ✅ Tool Status Visualization
-
-```python
-st.status()
-```
-
-Displays:
-
-* Tool execution status
-* Completion indicators
-
----
-
-# 🚀 Installation
-
-## 1. Clone Repository
-
+### 1. Clone & Navigate to Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+git clone https://github.com/sAkhil2027/mcp-chatbot.git
+cd mcp-chatbot
 ```
 
----
-
-## 2. Move into Project Folder
-
+### 2. Create & Activate Virtual Environment
 ```bash
-cd YOUR_REPOSITORY
-```
-
----
-
-## 3. Create Virtual Environment
-
-### Windows
-
-```bash
+# On Windows PowerShell
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 ```
 
-### Linux / Mac
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
----
-
-## 4. Install Dependencies
-
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-# 🔑 Environment Variables
-
-Create a `.env` file:
-
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env` and insert your API keys:
+```bash
+cp .env.example .env
+```
+Edit `.env`:
 ```env
-OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
+ALPHA_VANTAGE_API_KEY=your_alphavantage_key_optional
 ```
 
-Get your API key from:
-
-```text
-https://openrouter.ai/
-```
-
----
-
-# ▶️ Run the Project
-
+### 5. Launch the Streamlit App
 ```bash
 streamlit run streamlit_mcp_frontend.py
 ```
-
-Open browser:
-
-```text
-http://localhost:8501
-```
+Open **`http://localhost:8501`** in your browser.
 
 ---
 
-# 🐳 Docker Setup
+## 🧪 Verification & Automated Testing
 
-## Build Docker Image
+Run the automated guardrail verification suite to validate prompt input interception, tool parameter filtering, and recursion loop limits:
 
 ```bash
-docker build -t langgraph-mcp-chatbot .
+python verify_guardrails.py
 ```
-
----
-
-## Run Container
-
-```bash
-docker run -p 8501:8501 --env-file .env langgraph-mcp-chatbot
-```
-
----
-
-# 💡 Example Queries
-
-## 🌐 Web Search
-
-```text
-Who is the CEO of OpenAI?
-```
-
----
-
-## 📈 Stock Price Query
-
-```text
-What is the latest stock price of TSLA?
-```
-
----
-
-## 💬 General Conversation
-
-```text
-Explain LangGraph in simple terms.
-```
-
----
-
-# 🎯 Key Concepts Demonstrated
-
-* LangGraph Stateful Workflows
-* Tool Calling AI Agents
-* Async Programming
-* Persistent Chat Memory
-* Multi-Conversation Systems
-* Real-Time Streaming
-* Production Chatbot Architecture
-* LLM Orchestration
-* Streamlit AI Interfaces
-
----
-
-# 🔥 Why This Project Matters
-
-This is not just a simple chatbot.
-
-It demonstrates:
-
-* Production-level AI architecture
-* Stateful conversational systems
-* Real-world LangGraph workflows
-* Multi-tool orchestration
-* Persistent AI memory systems
-* Scalable async chatbot execution
-
-This project is highly relevant for:
-
-* AI Engineering
-* Generative AI
-* LLM Engineering
-* Conversational AI
-* Agentic AI Systems
-* Production NLP Systems
-
----
-
-# 👨‍💻 Author
-
-##Akhil Vikram Singh
-
-AI/ML Engineer focused on:
-* Generative AI
-* LangGraph Agents
-* RAG Systems
-* Computer Vision
-* AI Automation
-
----
-
-# ⭐ If You Like This Project
-
-Please consider giving this repository a ⭐ on GitHub.
