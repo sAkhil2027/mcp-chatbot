@@ -61,14 +61,16 @@ def submit_async_task(coro):
 # LLM
 # =========================
 
+api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY") or "missing-api-key"
+
 llm = ChatOpenAI(
     model="openai/gpt-4o-mini",
-    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
-    openai_api_base="https://openrouter.ai/api/v1",
+    api_key=api_key,
+    base_url="https://openrouter.ai/api/v1",
     temperature=0.3,
     default_headers={
-        "HTTP-Referer": "http://localhost:8501",
-        "X-Title": "My Chatbot"
+        "HTTP-Referer": "https://mcp-chatbot-phu5.onrender.com",
+        "X-Title": "LangGraph MCP Chatbot"
     }
 )
 
