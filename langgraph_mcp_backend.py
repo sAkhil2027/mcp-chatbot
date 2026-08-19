@@ -276,9 +276,13 @@ async def tool_guardrail_node(state: ChatState):
 
 
 async def _init_checkpointer():
+    db_path = os.getenv("DATABASE_PATH", "chatbot.db")
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 
     conn = await aiosqlite.connect(
-        "chatbot.db"
+        db_path
     )
 
     return AsyncSqliteSaver(conn)
