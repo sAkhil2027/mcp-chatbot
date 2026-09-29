@@ -28,6 +28,41 @@ def load_conversation(thread_id):
     return state.values.get("messages", [])
 
 
+def get_thread_title(thread_id):
+    """
+    Extracts a meaningful conversation title from the first user prompt,
+    falling back to 'New Conversation' instead of raw UUID/numbers.
+    """
+    if "thread_titles" in st.session_state and thread_id in st.session_state["thread_titles"]:
+        return st.session_state["thread_titles"][thread_id]
+
+    try:
+        messages = load_conversation(thread_id)
+        for msg in messages:
+            if isinstance(msg, HumanMessage) and msg.content:
+                clean_text = str(msg.content).strip().split("\n")[0]
+                title = clean_text[:28] + ("..." if len(clean_text) > 28 else "")
+                if "thread_titles" not in st.session_state:
+                    st.session_state["thread_titles"] = {}
+                st.session_state["thread_titles"][thread_id] = title
+                return title
+    except Exception:
+        pass
+
+    return "New Conversation"
+
+
+def set_thread_title(thread_id, title_text):
+    """
+    Sets a meaningful conversation title in session state.
+    """
+    clean_text = str(title_text).strip().split("\n")[0]
+    title = clean_text[:28] + ("..." if len(clean_text) > 28 else "")
+    if "thread_titles" not in st.session_state:
+        st.session_state["thread_titles"] = {}
+    st.session_state["thread_titles"][thread_id] = title
+
+
 # ======================= Session Initialization ===================
 if "message_history" not in st.session_state:
     st.session_state["message_history"] = []
@@ -35,20 +70,36 @@ if "message_history" not in st.session_state:
 if "thread_id" not in st.session_state:
     st.session_state["thread_id"] = generate_thread_id()
 
+if "thread_titles" not in st.session_state:
+    st.session_state["thread_titles"] = {}
+
 if "chat_threads" not in st.session_state:
     st.session_state["chat_threads"] = retrieve_all_threads()
 
 add_thread(st.session_state["thread_id"])
 
 # Sidebar 
-st.sidebar.title("LangGraph MCP Chatbot")
+st.sidebar.title("🤖 LangGraph MCP Chatbot")
 
-if st.sidebar.button("New Chat"):
+if st.sidebar.button("➕ New Chat", use_container_width=True):
     reset_chat()
+    st.rerun()
 
-st.sidebar.header("My Conversations")
+st.sidebar.markdown("---")
+st.sidebar.subheader("💬 My Conversations")
+
 for thread_id in st.session_state["chat_threads"][::-1]:
-    if st.sidebar.button(str(thread_id)):
+    title = get_thread_title(thread_id)
+    is_active = (thread_id == st.session_state["thread_id"])
+    button_icon = "🟢" if is_active else "💬"
+    button_label = f"{button_icon} {title}"
+
+    if st.sidebar.button(
+        button_label,
+        key=f"thread_{thread_id}",
+        use_container_width=True,
+        type="primary" if is_active else "secondary"
+    ):
         st.session_state["thread_id"] = thread_id
         messages = load_conversation(thread_id)
 
@@ -57,6 +108,7 @@ for thread_id in st.session_state["chat_threads"][::-1]:
             role = "user" if isinstance(msg, HumanMessage) else "assistant"
             temp_messages.append({"role": role, "content": msg.content})
         st.session_state["message_history"] = temp_messages
+        st.rerun()
 
 #  Main UI 
 
@@ -65,10 +117,15 @@ for message in st.session_state["message_history"]:
     with st.chat_message(message["role"]):
         st.text(message["content"])
 
-user_input = st.chat_input("Type here")
+user_input = st.chat_input("Type here...")
 
 if user_input:
-    #User's message
+    # If first message in current thread, assign meaningful title
+    curr_title = st.session_state["thread_titles"].get(st.session_state["thread_id"], "New Conversation")
+    if curr_title == "New Conversation":
+        set_thread_title(st.session_state["thread_id"], user_input)
+
+    # User's message
     st.session_state["message_history"].append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.text(user_input)
@@ -139,3 +196,4 @@ if user_input:
     st.session_state["message_history"].append(
         {"role": "assistant", "content": ai_message}
     )
+    st.rerun()
