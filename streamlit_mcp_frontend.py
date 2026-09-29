@@ -81,18 +81,9 @@ add_thread(st.session_state["thread_id"])
 # Sidebar 
 st.sidebar.title("🤖 LangGraph MCP Chatbot")
 
-col_new, col_clear = st.sidebar.columns([0.68, 0.32])
-with col_new:
-    if st.button("➕ New Chat", use_container_width=True):
-        reset_chat()
-        st.rerun()
-with col_clear:
-    if st.button("🗑️ Clear", use_container_width=True, help="Clear all stored conversations"):
-        clear_all_threads()
-        st.session_state["chat_threads"] = []
-        st.session_state["thread_titles"] = {}
-        reset_chat()
-        st.rerun()
+if st.sidebar.button("➕ New Chat", use_container_width=True):
+    reset_chat()
+    st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("💬 My Conversations")
