@@ -2,7 +2,7 @@ import queue
 import uuid
 import os
 import streamlit as st
-from langgraph_mcp_backend import chatbot, retrieve_all_threads, submit_async_task
+from langgraph_mcp_backend import chatbot, retrieve_all_threads, submit_async_task, delete_thread, clear_all_threads
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 # =========================== Utilities ===========================
@@ -81,34 +81,55 @@ add_thread(st.session_state["thread_id"])
 # Sidebar 
 st.sidebar.title("🤖 LangGraph MCP Chatbot")
 
-if st.sidebar.button("➕ New Chat", use_container_width=True):
-    reset_chat()
-    st.rerun()
+col_new, col_clear = st.sidebar.columns([0.68, 0.32])
+with col_new:
+    if st.button("➕ New Chat", use_container_width=True):
+        reset_chat()
+        st.rerun()
+with col_clear:
+    if st.button("🗑️ Clear", use_container_width=True, help="Clear all stored conversations"):
+        clear_all_threads()
+        st.session_state["chat_threads"] = []
+        st.session_state["thread_titles"] = {}
+        reset_chat()
+        st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("💬 My Conversations")
 
-for thread_id in st.session_state["chat_threads"][::-1]:
+for thread_id in list(st.session_state["chat_threads"])[::-1]:
     title = get_thread_title(thread_id)
     is_active = (thread_id == st.session_state["thread_id"])
     button_icon = "🟢" if is_active else "💬"
     button_label = f"{button_icon} {title}"
 
-    if st.sidebar.button(
-        button_label,
-        key=f"thread_{thread_id}",
-        use_container_width=True,
-        type="primary" if is_active else "secondary"
-    ):
-        st.session_state["thread_id"] = thread_id
-        messages = load_conversation(thread_id)
+    col_btn, col_del = st.sidebar.columns([0.82, 0.18])
+    with col_btn:
+        if st.button(
+            button_label,
+            key=f"thread_{thread_id}",
+            use_container_width=True,
+            type="primary" if is_active else "secondary"
+        ):
+            st.session_state["thread_id"] = thread_id
+            messages = load_conversation(thread_id)
 
-        temp_messages = []
-        for msg in messages:
-            role = "user" if isinstance(msg, HumanMessage) else "assistant"
-            temp_messages.append({"role": role, "content": msg.content})
-        st.session_state["message_history"] = temp_messages
-        st.rerun()
+            temp_messages = []
+            for msg in messages:
+                role = "user" if isinstance(msg, HumanMessage) else "assistant"
+                temp_messages.append({"role": role, "content": msg.content})
+            st.session_state["message_history"] = temp_messages
+            st.rerun()
+    with col_del:
+        if st.button("🗑️", key=f"del_{thread_id}", help=f"Delete '{title}'", use_container_width=True):
+            delete_thread(thread_id)
+            if thread_id in st.session_state["chat_threads"]:
+                st.session_state["chat_threads"].remove(thread_id)
+            if "thread_titles" in st.session_state and thread_id in st.session_state["thread_titles"]:
+                del st.session_state["thread_titles"][thread_id]
+            if st.session_state["thread_id"] == thread_id:
+                reset_chat()
+            st.rerun()
 
 #  Main UI 
 

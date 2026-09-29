@@ -352,3 +352,31 @@ def retrieve_all_threads():
     return run_async(
         _alist_threads()
     )
+
+
+async def _adelete_thread(thread_id: str):
+    db_path = os.getenv("DATABASE_PATH", "chatbot.db")
+    async with aiosqlite.connect(db_path) as conn:
+        await conn.execute("DELETE FROM checkpoints WHERE thread_id = ?", (str(thread_id),))
+        await conn.execute("DELETE FROM writes WHERE thread_id = ?", (str(thread_id),))
+        await conn.commit()
+
+
+def delete_thread(thread_id: str):
+    return run_async(
+        _adelete_thread(thread_id)
+    )
+
+
+async def _aclear_all_threads():
+    db_path = os.getenv("DATABASE_PATH", "chatbot.db")
+    async with aiosqlite.connect(db_path) as conn:
+        await conn.execute("DELETE FROM checkpoints")
+        await conn.execute("DELETE FROM writes")
+        await conn.commit()
+
+
+def clear_all_threads():
+    return run_async(
+        _aclear_all_threads()
+    )
